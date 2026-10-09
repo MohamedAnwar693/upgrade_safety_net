@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="ir_cron_usn_process" model="ir.cron">
+        <field name="name">Upgrade Safety Net: process snapshots and comparisons</field>
+        <field name="model_id" ref="model_usn_snapshot"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_process()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

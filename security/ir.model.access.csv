@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_usn_config,usn.config,model_usn_config,base.group_system,1,1,1,0
+access_usn_metric_definition,usn.metric.definition,model_usn_metric_definition,base.group_system,1,1,1,1
+access_usn_snapshot,usn.snapshot,model_usn_snapshot,base.group_system,1,1,1,1
+access_usn_snapshot_table,usn.snapshot.table,model_usn_snapshot_table,base.group_system,1,1,1,1
+access_usn_snapshot_metric,usn.snapshot.metric,model_usn_snapshot_metric,base.group_system,1,1,1,1
+access_usn_snapshot_custom,usn.snapshot.custom,model_usn_snapshot_custom,base.group_system,1,1,1,1
+access_usn_snapshot_module,usn.snapshot.module,model_usn_snapshot_module,base.group_system,1,1,1,1
+access_usn_comparison,usn.comparison,model_usn_comparison,base.group_system,1,1,1,1
+access_usn_comparison_line,usn.comparison.line,model_usn_comparison_line,base.group_system,1,1,1,1
+access_usn_import_wizard,usn.import.wizard,model_usn_import_wizard,base.group_system,1,1,1,1

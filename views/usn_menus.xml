@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="usn_menu_root" name="Upgrade Safety Net" sequence="95"
+              web_icon="upgrade_safety_net,static/description/icon.png" groups="base.group_system"/>
+    <menuitem id="usn_menu_snapshots" name="Snapshots" parent="usn_menu_root" sequence="10"
+              action="usn_snapshot_action"/>
+    <menuitem id="usn_menu_take_snapshot" name="Take Snapshot Now" parent="usn_menu_root" sequence="15"
+              action="usn_take_snapshot_action"/>
+    <menuitem id="usn_menu_comparisons" name="Comparisons" parent="usn_menu_root" sequence="20"
+              action="usn_comparison_action"/>
+    <menuitem id="usn_menu_findings" name="Findings" parent="usn_menu_root" sequence="30"
+              action="usn_comparison_line_action"/>
+    <menuitem id="usn_menu_config" name="Configuration" parent="usn_menu_root" sequence="90"/>
+    <menuitem id="usn_menu_metrics" name="Watched Totals" parent="usn_menu_config" sequence="10"
+              action="usn_metric_definition_action"/>
+    <menuitem id="usn_menu_import" name="Import Snapshot" parent="usn_menu_config" sequence="20"
+              action="usn_import_wizard_action"/>
+    <menuitem id="usn_menu_settings" name="Settings" parent="usn_menu_config" sequence="30"
+              action="usn_open_config_action"/>
+</odoo>

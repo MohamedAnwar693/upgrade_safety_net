@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="usn_import_wizard_view_form" model="ir.ui.view">
+        <field name="name">usn.import.wizard.form</field>
+        <field name="model">usn.import.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <p>Import a snapshot that was exported from this or another database, for example one taken
+                   before an upgrade of a database that did not have this module installed afterwards.</p>
+                <group>
+                    <field name="file" filename="filename"/>
+                    <field name="filename" invisible="1"/>
+                </group>
+                <footer>
+                    <button name="action_import" type="object" string="Import" class="btn-primary" data-hotkey="q"/>
+                    <button string="Cancel" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="usn_import_wizard_action" model="ir.actions.act_window">
+        <field name="name">Import Snapshot</field>
+        <field name="res_model">usn.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

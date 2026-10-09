@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================= Snapshot ================= -->
+    <record id="usn_snapshot_view_list" model="ir.ui.view">
+        <field name="name">usn.snapshot.list</field>
+        <field name="model">usn.snapshot</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="state == 'failed'" decoration-muted="state == 'queued'">
+                <field name="name"/>
+                <field name="taken_on"/>
+                <field name="odoo_series"/>
+                <field name="user_id" optional="show"/>
+                <field name="imported" optional="show"/>
+                <field name="progress" widget="progressbar" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'" decoration-info="state == 'running'"
+                       decoration-danger="state == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="usn_snapshot_view_form" model="ir.ui.view">
+        <field name="name">usn.snapshot.form</field>
+        <field name="model">usn.snapshot</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_compare_now" type="object" class="btn-primary"
+                            string="Compare with current database"
+                            invisible="state != 'done'"/>
+                    <button name="action_export" type="object" string="Export (JSON)"
+                            invisible="state != 'done'"/>
+                    <button name="action_retry" type="object" string="Retry" invisible="state != 'failed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="queued,running,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_tables" type="object" class="oe_stat_button" icon="fa-table">
+                            <field name="table_count" widget="statinfo" string="Tables"/>
+                        </button>
+                        <button name="action_view_metrics" type="object" class="oe_stat_button" icon="fa-calculator">
+                            <field name="metric_count" widget="statinfo" string="Totals"/>
+                        </button>
+                        <button name="action_view_custom" type="object" class="oe_stat_button" icon="fa-wrench">
+                            <field name="custom_count" widget="statinfo" string="Customisations"/>
+                        </button>
+                        <button name="action_view_modules" type="object" class="oe_stat_button" icon="fa-cubes">
+                            <field name="module_count" widget="statinfo" string="Modules"/>
+                        </button>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not needs_comparison">
+                        This snapshot was taken on another Odoo series than the one now running.
+                        Use <b>Compare with current database</b> to check what the upgrade changed.
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="state not in ('queued', 'running')">
+                        The snapshot is being taken in the background by the scheduler. You can close this page.
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="state != 'failed'">
+                        <field name="error" readonly="1"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="taken_on"/>
+                            <field name="user_id"/>
+                            <field name="progress" widget="progressbar" invisible="state == 'done'"/>
+                        </group>
+                        <group>
+                            <field name="odoo_series"/>
+                            <field name="odoo_version"/>
+                            <field name="db_name"/>
+                            <field name="imported"/>
+                        </group>
+                    </group>
+                    <group string="Note">
+                        <field name="note" nolabel="1" placeholder="E.g. 'Production, just before the 19.0 to 20.0 upgrade'"/>
+                    </group>
+                    <field name="comparison_ids" invisible="not comparison_ids">
+                        <list>
+                            <field name="name"/>
+                            <field name="ran_on"/>
+                            <field name="critical_count"/>
+                            <field name="warning_count"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="usn_snapshot_view_search" model="ir.ui.view">
+        <field name="name">usn.snapshot.search</field>
+        <field name="model">usn.snapshot</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="odoo_series"/>
+                <filter name="done" string="Done" domain="[('state', '=', 'done')]"/>
+                <filter name="failed" string="Failed" domain="[('state', '=', 'failed')]"/>
+                <filter name="imported" string="Imported" domain="[('imported', '=', True)]"/>
+                <group>
+                    <filter name="group_series" string="Odoo series" context="{'group_by': 'odoo_series'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="usn_snapshot_action" model="ir.actions.act_window">
+        <field name="name">Snapshots</field>
+        <field name="res_model">usn.snapshot</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Take your first snapshot</p>
+            <p>Take a snapshot right before an upgrade. After the upgrade the module compares it with the new database
+               and reports data that silently vanished or totals that shifted.</p>
+        </field>
+    </record>
+
+    <record id="usn_take_snapshot_action" model="ir.actions.server">
+        <field name="name">Take Snapshot Now</field>
+        <field name="model_id" ref="model_usn_snapshot"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_take_snapshot()</field>
+    </record>
+
+    <!-- ================= Snapshot content ================= -->
+    <record id="usn_snapshot_table_view_list" model="ir.ui.view">
+        <field name="name">usn.snapshot.table.list</field>
+        <field name="model">usn.snapshot.table</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="error">
+                <field name="snapshot_id" column_invisible="context.get('default_snapshot_id')"/>
+                <field name="name"/>
+                <field name="model"/>
+                <field name="row_count"/>
+                <field name="column_count"/>
+                <field name="filled_column_count"/>
+                <field name="error" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="usn_snapshot_table_view_form" model="ir.ui.view">
+        <field name="name">usn.snapshot.table.form</field>
+        <field name="model">usn.snapshot.table</field>
+        <field name="arch" type="xml">
+            <form edit="0" create="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="snapshot_id"/>
+                            <field name="name"/>
+                            <field name="model"/>
+                            <field name="error"/>
+                        </group>
+                        <group>
+                            <field name="row_count"/>
+                            <field name="column_count"/>
+                            <field name="filled_column_count"/>
+                        </group>
+                    </group>
+                    <field name="columns_json"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="usn_snapshot_table_view_search" model="ir.ui.view">
+        <field name="name">usn.snapshot.table.search</field>
+        <field name="model">usn.snapshot.table</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="model"/>
+                <filter name="with_rows" string="With rows" domain="[('row_count', '>', 0)]"/>
+                <filter name="errors" string="Errors" domain="[('error', '!=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="usn_snapshot_metric_view_list" model="ir.ui.view">
+        <field name="name">usn.snapshot.metric.list</field>
+        <field name="model">usn.snapshot.metric</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="error" create="0">
+                <field name="snapshot_id" column_invisible="context.get('default_snapshot_id')"/>
+                <field name="group"/>
+                <field name="name"/>
+                <field name="key"/>
+                <field name="label"/>
+                <field name="value"/>
+                <field name="count"/>
+                <field name="error" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="usn_snapshot_metric_view_search" model="ir.ui.view">
+        <field name="name">usn.snapshot.metric.search</field>
+        <field name="model">usn.snapshot.metric</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="label"/>
+                <field name="group"/>
+                <filter name="errors" string="Errors" domain="[('error', '!=', False)]"/>
+                <group>
+                    <filter name="group_group" string="Group" context="{'group_by': 'group'}"/>
+                    <filter name="group_name" string="Total" context="{'group_by': 'name'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="usn_snapshot_custom_view_list" model="ir.ui.view">
+        <field name="name">usn.snapshot.custom.list</field>
+        <field name="model">usn.snapshot.custom</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="snapshot_id" column_invisible="context.get('default_snapshot_id')"/>
+                <field name="kind"/>
+                <field name="label"/>
+                <field name="res_id"/>
+                <field name="active"/>
+                <field name="hash" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="usn_snapshot_module_view_list" model="ir.ui.view">
+        <field name="name">usn.snapshot.module.list</field>
+        <field name="model">usn.snapshot.module</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="snapshot_id" column_invisible="context.get('default_snapshot_id')"/>
+                <field name="name"/>
+                <field name="state"/>
+                <field name="version"/>
+            </list>
+        </field>
+    </record>
+</odoo>

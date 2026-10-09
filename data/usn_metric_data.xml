@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="usn_metric_users_internal" model="usn.metric.definition">
+        <field name="code">users_internal</field>
+        <field name="name">Internal users</field>
+        <field name="group">Users</field>
+        <field name="sequence">10</field>
+        <field name="required_tables">res_users</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT CASE WHEN active THEN 'active' ELSE 'archived' END, 0, COUNT(*) FROM res_users WHERE share IS NOT TRUE GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_users_portal" model="usn.metric.definition">
+        <field name="code">users_portal</field>
+        <field name="name">Portal / public users</field>
+        <field name="group">Users</field>
+        <field name="sequence">11</field>
+        <field name="required_tables">res_users</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT CASE WHEN active THEN 'active' ELSE 'archived' END, 0, COUNT(*) FROM res_users WHERE share IS TRUE GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_companies" model="usn.metric.definition">
+        <field name="code">companies</field>
+        <field name="name">Companies</field>
+        <field name="group">Users</field>
+        <field name="sequence">12</field>
+        <field name="required_tables">res_company</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT 'companies', 0, COUNT(*) FROM res_company]]></field>
+    </record>
+    <record id="usn_metric_partners" model="usn.metric.definition">
+        <field name="code">partners</field>
+        <field name="name">Contacts</field>
+        <field name="group">Contacts</field>
+        <field name="sequence">20</field>
+        <field name="required_tables">res_partner</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT (CASE WHEN active THEN 'active' ELSE 'archived' END) || ' / ' || (CASE WHEN is_company THEN 'company' ELSE 'person' END), 0, COUNT(*) FROM res_partner GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_products" model="usn.metric.definition">
+        <field name="code">products</field>
+        <field name="name">Product variants</field>
+        <field name="group">Products</field>
+        <field name="sequence">30</field>
+        <field name="required_tables">product_product</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT CASE WHEN active THEN 'active' ELSE 'archived' END, 0, COUNT(*) FROM product_product GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_stock_totals" model="usn.metric.definition">
+        <field name="code">stock_totals</field>
+        <field name="name">Stock totals (internal locations)</field>
+        <field name="group">Stock</field>
+        <field name="sequence">40</field>
+        <field name="required_tables">stock_quant,stock_location</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT 'on_hand', COALESCE(SUM(q.quantity), 0), COUNT(*) FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE l.usage = 'internal' UNION ALL SELECT 'reserved', COALESCE(SUM(q.reserved_quantity), 0), COUNT(*) FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE l.usage = 'internal']]></field>
+    </record>
+    <record id="usn_metric_stock_by_location" model="usn.metric.definition">
+        <field name="code">stock_by_location</field>
+        <field name="name">Stock on hand by location</field>
+        <field name="group">Stock</field>
+        <field name="sequence">41</field>
+        <field name="required_tables">stock_quant,stock_location</field>
+        <field name="label_model">stock.location</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT q.location_id::text, COALESCE(SUM(q.quantity), 0), COUNT(*) FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE l.usage = 'internal' GROUP BY q.location_id]]></field>
+    </record>
+    <record id="usn_metric_stock_by_product" model="usn.metric.definition">
+        <field name="code">stock_by_product</field>
+        <field name="name">Stock on hand by product</field>
+        <field name="group">Stock</field>
+        <field name="sequence">42</field>
+        <field name="required_tables">stock_quant,stock_location</field>
+        <field name="label_model">product.product</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT q.product_id::text, COALESCE(SUM(q.quantity), 0), COUNT(*) FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE l.usage = 'internal' GROUP BY q.product_id]]></field>
+    </record>
+    <record id="usn_metric_account_balance" model="usn.metric.definition">
+        <field name="code">account_balance</field>
+        <field name="name">Posted balance by account</field>
+        <field name="group">Accounting</field>
+        <field name="sequence">50</field>
+        <field name="required_tables">account_move_line,account_move</field>
+        <field name="label_model">account.account</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT l.account_id::text, COALESCE(SUM(l.balance), 0), COUNT(*) FROM account_move_line l JOIN account_move m ON m.id = l.move_id WHERE m.state = 'posted' GROUP BY l.account_id]]></field>
+    </record>
+    <record id="usn_metric_account_totals" model="usn.metric.definition">
+        <field name="code">account_totals</field>
+        <field name="name">Posted debit / credit totals</field>
+        <field name="group">Accounting</field>
+        <field name="sequence">51</field>
+        <field name="required_tables">account_move_line,account_move</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT 'debit', COALESCE(SUM(l.debit), 0), COUNT(*) FROM account_move_line l JOIN account_move m ON m.id = l.move_id WHERE m.state = 'posted' UNION ALL SELECT 'credit', COALESCE(SUM(l.credit), 0), COUNT(*) FROM account_move_line l JOIN account_move m ON m.id = l.move_id WHERE m.state = 'posted']]></field>
+    </record>
+    <record id="usn_metric_open_receivable_payable" model="usn.metric.definition">
+        <field name="code">open_receivable_payable</field>
+        <field name="name">Open receivables / payables</field>
+        <field name="group">Accounting</field>
+        <field name="sequence">52</field>
+        <field name="required_tables">account_move_line,account_move,account_account</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT a.account_type, COALESCE(SUM(l.amount_residual), 0), COUNT(*) FROM account_move_line l JOIN account_move m ON m.id = l.move_id JOIN account_account a ON a.id = l.account_id WHERE m.state = 'posted' AND a.account_type IN ('asset_receivable', 'liability_payable') AND NOT l.reconciled GROUP BY a.account_type]]></field>
+    </record>
+    <record id="usn_metric_invoices" model="usn.metric.definition">
+        <field name="code">invoices</field>
+        <field name="name">Journal entries by type and state</field>
+        <field name="group">Accounting</field>
+        <field name="sequence">53</field>
+        <field name="required_tables">account_move</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT m.move_type || ' / ' || m.state, COALESCE(SUM(m.amount_total_signed), 0), COUNT(*) FROM account_move m GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_payments" model="usn.metric.definition">
+        <field name="code">payments</field>
+        <field name="name">Payments by type and state</field>
+        <field name="group">Accounting</field>
+        <field name="sequence">54</field>
+        <field name="required_tables">account_payment</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT p.payment_type || ' / ' || COALESCE(p.state, '-'), COALESCE(SUM(p.amount), 0), COUNT(*) FROM account_payment p GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_analytic_lines" model="usn.metric.definition">
+        <field name="code">analytic_lines</field>
+        <field name="name">Analytic lines (amount)</field>
+        <field name="group">Accounting</field>
+        <field name="sequence">55</field>
+        <field name="required_tables">account_analytic_line</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT 'all', COALESCE(SUM(amount), 0), COUNT(*) FROM account_analytic_line]]></field>
+    </record>
+    <record id="usn_metric_sales" model="usn.metric.definition">
+        <field name="code">sales</field>
+        <field name="name">Sales orders by state</field>
+        <field name="group">Sales</field>
+        <field name="sequence">60</field>
+        <field name="required_tables">sale_order</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT state, COALESCE(SUM(amount_total), 0), COUNT(*) FROM sale_order GROUP BY state]]></field>
+    </record>
+    <record id="usn_metric_purchases" model="usn.metric.definition">
+        <field name="code">purchases</field>
+        <field name="name">Purchase orders by state</field>
+        <field name="group">Purchase</field>
+        <field name="sequence">61</field>
+        <field name="required_tables">purchase_order</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT state, COALESCE(SUM(amount_total), 0), COUNT(*) FROM purchase_order GROUP BY state]]></field>
+    </record>
+    <record id="usn_metric_crm" model="usn.metric.definition">
+        <field name="code">crm</field>
+        <field name="name">CRM leads / opportunities</field>
+        <field name="group">CRM</field>
+        <field name="sequence">62</field>
+        <field name="required_tables">crm_lead</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT COALESCE(type, 'lead') || ' / ' || (CASE WHEN active THEN 'active' ELSE 'archived' END), COALESCE(SUM(expected_revenue), 0), COUNT(*) FROM crm_lead GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_manufacturing" model="usn.metric.definition">
+        <field name="code">manufacturing</field>
+        <field name="name">Manufacturing orders by state</field>
+        <field name="group">Manufacturing</field>
+        <field name="sequence">63</field>
+        <field name="required_tables">mrp_production</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT state, COALESCE(SUM(product_qty), 0), COUNT(*) FROM mrp_production GROUP BY state]]></field>
+    </record>
+    <record id="usn_metric_pos_orders" model="usn.metric.definition">
+        <field name="code">pos_orders</field>
+        <field name="name">POS orders by state</field>
+        <field name="group">Point of Sale</field>
+        <field name="sequence">64</field>
+        <field name="required_tables">pos_order</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT state, COALESCE(SUM(amount_total), 0), COUNT(*) FROM pos_order GROUP BY state]]></field>
+    </record>
+    <record id="usn_metric_employees" model="usn.metric.definition">
+        <field name="code">employees</field>
+        <field name="name">Employees</field>
+        <field name="group">HR</field>
+        <field name="sequence">65</field>
+        <field name="required_tables">hr_employee</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT CASE WHEN active THEN 'active' ELSE 'archived' END, 0, COUNT(*) FROM hr_employee GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_tasks" model="usn.metric.definition">
+        <field name="code">tasks</field>
+        <field name="name">Project tasks</field>
+        <field name="group">Project</field>
+        <field name="sequence">66</field>
+        <field name="required_tables">project_task</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT CASE WHEN active THEN 'active' ELSE 'archived' END, 0, COUNT(*) FROM project_task GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_record_attachments" model="usn.metric.definition">
+        <field name="code">record_attachments</field>
+        <field name="name">Attachments linked to records</field>
+        <field name="group">Files</field>
+        <field name="sequence">70</field>
+        <field name="required_tables">ir_attachment</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT COALESCE(type, '-'), COALESCE(SUM(file_size), 0), COUNT(*) FROM ir_attachment WHERE res_model IS NOT NULL AND res_model <> '' GROUP BY 1]]></field>
+    </record>
+    <record id="usn_metric_chatter_messages" model="usn.metric.definition">
+        <field name="code">chatter_messages</field>
+        <field name="name">Chatter messages and e-mails</field>
+        <field name="group">Files</field>
+        <field name="sequence">71</field>
+        <field name="required_tables">mail_message</field>
+        <field name="tolerance">0.005</field>
+        <field name="is_builtin" eval="True"/>
+        <field name="query"><![CDATA[SELECT message_type, 0, COUNT(*) FROM mail_message WHERE message_type IN ('comment', 'email', 'email_outgoing') GROUP BY 1]]></field>
+    </record>
+</odoo>

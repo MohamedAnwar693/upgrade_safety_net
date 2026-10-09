@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="usn_comparison_report_action" model="ir.actions.report">
+        <field name="name">Upgrade Comparison Report</field>
+        <field name="model">usn.comparison</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">upgrade_safety_net.report_comparison</field>
+        <field name="report_file">upgrade_safety_net.report_comparison</field>
+        <field name="print_report_name">'Upgrade-Safety-Net-%s' % object.id</field>
+        <field name="binding_model_id" ref="model_usn_comparison"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_comparison">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.internal_layout">
+                    <div class="page">
+                        <h2>Upgrade Safety Net report</h2>
+                        <p>
+                            <strong>Before:</strong> <span t-field="o.before_id.name"/>
+                            (Odoo <span t-field="o.before_id.odoo_series"/>)<br/>
+                            <strong>After:</strong> <span t-field="o.after_id.name"/>
+                            (Odoo <span t-field="o.after_id.odoo_series"/>)<br/>
+                            <strong>Compared on:</strong> <span t-field="o.ran_on"/>
+                        </p>
+                        <table class="table table-sm" style="width: 50%;">
+                            <tr><td>Critical findings</td><td class="text-end"><strong t-out="o.critical_count"/></td></tr>
+                            <tr><td>Warnings</td><td class="text-end"><strong t-out="o.warning_count"/></td></tr>
+                            <tr><td>Informational</td><td class="text-end"><strong t-out="o.info_count"/></td></tr>
+                            <tr><td>Verdict</td><td class="text-end"><strong t-field="o.verdict"/></td></tr>
+                        </table>
+                        <t t-set="lines" t-value="o.line_ids.filtered(lambda l: l.state == 'open')"/>
+                        <h4 class="mt-4">Open findings</h4>
+                        <p t-if="not lines">No open findings.</p>
+                        <table t-if="lines" class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Severity</th>
+                                    <th>Type</th>
+                                    <th>Subject</th>
+                                    <th class="text-end">Before</th>
+                                    <th class="text-end">After</th>
+                                    <th>Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="lines[:1000]" t-as="l">
+                                    <td><span t-field="l.severity"/></td>
+                                    <td><span t-field="l.kind"/></td>
+                                    <td><span t-field="l.subject"/></td>
+                                    <td class="text-end"><span t-field="l.before"/></td>
+                                    <td class="text-end"><span t-field="l.after"/></td>
+                                    <td><span t-field="l.hint"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p t-if="len(lines) > 1000"><em>Only the first 1000 findings are shown; see the list view for all.</em></p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
